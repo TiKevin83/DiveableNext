@@ -7,14 +7,18 @@ generator client {
 }
 
 datasource db {
-    provider = "mysql"
+    provider = "postgresql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
     url      = env("DATABASE_URL")
 
     // If you have enabled foreign key constraints for your database, remove this line.
     relationMode = "prisma"
 }
 
-model Post {
+model Book {
     id        Int      @id @default(autoincrement())
     name      String
     createdAt DateTime @default(now())
@@ -23,8 +27,125 @@ model Post {
     createdBy   User   @relation(fields: [createdById], references: [id])
     createdById String
 
+    chapters Chapter[]
+
+    languages Language[]
+    languageDepths LanguageDepth[]
+
     @@index([name])
     @@index([createdById])
+}
+
+model LanguageDepth {
+    id        Int      @id @default(autoincrement())
+    depth     Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    book Book @relation(fields: [bookId], references: [id])
+    bookId Int
+
+    language Language @relation(fields: [languageId], references: [id])
+    languageId Int
+
+    words WordLayer[]
+
+    @@index([depth])
+    @@index([bookId])
+    @@index([languageId])
+}
+
+model Chapter {
+    id        Int      @id @default(autoincrement())
+    name      String
+    number    Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    book Book @relation(fields: [bookId], references: [id])
+    bookId Int
+
+    stanzas Stanza[]
+
+    @@index([name])
+    @@index([bookId])
+}
+
+model Stanza {
+    id        Int      @id @default(autoincrement())
+    number    Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    chapter Chapter @relation(fields: [chapterId], references: [id])
+    chapterId Int
+
+    lines Line[]
+
+    @@index([number])
+    @@index([chapterId])
+}
+
+model Line {
+    id        Int      @id @default(autoincrement())
+    text      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    stanza Stanza @relation(fields: [stanzaId], references: [id])
+    stanzaId Int
+
+    words Word[]
+
+    @@index([text])
+    @@index([stanzaId])
+}
+
+model Word {
+    id        Int      @id @default(autoincrement())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    line Line @relation(fields: [lineId], references: [id])
+    lineId Int
+
+    layers WordLayer[]
+
+    @@index([lineId])
+}
+
+model WordLayer {
+    id        Int      @id @default(autoincrement())
+    text      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    word Word @relation(fields: [wordId], references: [id])
+    wordId Int
+
+    language Language @relation(fields: [languageId], references: [id])
+    languageId Int
+
+    languageDepth LanguageDepth @relation(fields: [languageDepthId], references: [id])
+    languageDepthId Int
+
+    @@index([wordId])
+    @@index([languageId])
+    @@index([text])
+    @@index([languageDepthId])
+}
+
+model Language {
+    id        Int      @id @default(autoincrement())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    words WordLayer[]
+    books Book[]
+    languageDepths LanguageDepth[]
+
+    @@index([name])
 }
 
 // Necessary for Next auth
@@ -65,7 +186,7 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
+    books         Book[]
 }
 
 model VerificationToken {
