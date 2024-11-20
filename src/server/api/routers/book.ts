@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
+  publicProcedure,
 } from "~/server/api/trpc";
 
 export const bookRouter = createTRPCRouter({
@@ -17,6 +18,34 @@ export const bookRouter = createTRPCRouter({
       });
     }),
 
+  createLanguageDepth: protectedProcedure
+    .input(
+      z.object({
+        bookId: z.number(),
+        languageId: z.number(),
+        depth: z.number(),
+        name: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.languageDepth.create({
+        data: {
+          book: { connect: { id: input.bookId } },
+          language: { connect: { id: input.languageId } },
+          depth: input.depth,
+          name: input.name,
+        },
+      });
+    }),
+
+  deleteLanguageDepth: protectedProcedure
+    .input(z.number())
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.languageDepth.delete({
+        where: { id: input },
+      });
+    }),
+
   getLatest: protectedProcedure.query(async ({ ctx }) => {
     const book = await ctx.db.book.findFirst({
       orderBy: { createdAt: "desc" },
@@ -26,11 +55,25 @@ export const bookRouter = createTRPCRouter({
     return book ?? null;
   }),
 
-  getAllForUser: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const books = await ctx.db.book.findMany({
       orderBy: { createdAt: "desc" },
       where: { createdBy: { id: ctx.session.user.id } },
     });
     return books ?? [];
+  }),
+
+  get: publicProcedure.input(z.number()).query(async ({ ctx, input }) => {
+    const book = await ctx.db.book.findFirst({
+      where: { id: input },
+      include: {
+        chapters: true,
+        languageDepths: {
+          include: { language: true },
+        },
+      },
+    });
+
+    return book ?? null;
   }),
 });

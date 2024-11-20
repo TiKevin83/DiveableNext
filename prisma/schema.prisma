@@ -29,7 +29,6 @@ model Book {
 
     chapters Chapter[]
 
-    languages Language[]
     languageDepths LanguageDepth[]
 
     @@index([name])
@@ -39,6 +38,7 @@ model Book {
 model LanguageDepth {
     id        Int      @id @default(autoincrement())
     depth     Int
+    name      String   @default("English")
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -88,7 +88,7 @@ model Stanza {
 
 model Line {
     id        Int      @id @default(autoincrement())
-    text      String
+    number    Int
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -97,12 +97,12 @@ model Line {
 
     words Word[]
 
-    @@index([text])
     @@index([stanzaId])
 }
 
 model Word {
     id        Int      @id @default(autoincrement())
+    number    Int
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -123,26 +123,22 @@ model WordLayer {
     word Word @relation(fields: [wordId], references: [id])
     wordId Int
 
-    language Language @relation(fields: [languageId], references: [id])
-    languageId Int
-
     languageDepth LanguageDepth @relation(fields: [languageDepthId], references: [id])
     languageDepthId Int
 
     @@index([wordId])
-    @@index([languageId])
     @@index([text])
     @@index([languageDepthId])
 }
 
 model Language {
     id        Int      @id @default(autoincrement())
-    name      String
+    name      String   @default("English")
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    words WordLayer[]
-    books Book[]
+    beginYearBP Int
+    endYearBP   Int
     languageDepths LanguageDepth[]
 
     @@index([name])
