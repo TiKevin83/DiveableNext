@@ -1,4 +1,3 @@
-import { get } from "http";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -31,7 +30,16 @@ export const stanzaRouter = createTRPCRouter({
   get: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
     return ctx.db.stanza.findUnique({
       where: { id: input },
-      include: { lines: true, chapter: { include: { book: true } } },
+      include: {
+        lines: {
+          include: {
+            words: {
+              include: { layers: { include: { languageDepth: true } } },
+            },
+          },
+        },
+        chapter: { include: { book: { include: { languageDepths: true } } } },
+      },
     });
   }),
 });

@@ -67,7 +67,15 @@ export const bookRouter = createTRPCRouter({
     const book = await ctx.db.book.findFirst({
       where: { id: input },
       include: {
-        chapters: true,
+        chapters: {
+          include: {
+            stanzas: {
+              include: {
+                lines: { include: { words: { include: { layers: true } } } },
+              },
+            },
+          },
+        },
         languageDepths: {
           include: { language: true },
         },

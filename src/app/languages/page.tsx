@@ -28,34 +28,38 @@ const Languages = () => {
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
         <h2 className="text-2xl font-bold">Diveable Languages</h2>
         <ul>
-          {languages.data?.map((language) => {
-            const languageBeginYear = Math.abs(1950 + language.beginYearBP);
-            const languageBeginYearEra =
-              1950 + language.beginYearBP < 0 ? "BC" : "AD";
-            const languageEndYear = Math.abs(1950 + language.endYearBP);
-            const languageEndYearEra =
-              1950 + language.endYearBP < 0 ? "BC" : "AD";
+          {languages.data
+            ?.sort((a, b) => a.endYearBP - b.endYearBP)
+            .map((language) => {
+              const languageBeginYear = Math.abs(1950 - language.beginYearBP);
+              const languageBeginYearEra =
+                1950 - language.beginYearBP < 0 ? "BC" : "AD";
+              const languageEndYear = Math.abs(1950 - language.endYearBP);
+              const languageEndYearEra =
+                1950 - language.endYearBP < 0 ? "BC" : "AD";
 
-            return (
-              <li key={language.id}>
-                <div>
-                  <Link href={`/languages/${encodeURIComponent(language.id)}`}>
-                    {language.name}:{" "}
-                  </Link>
-                  Active from {languageBeginYear} {languageBeginYearEra} to{" "}
-                  {languageEndYear} {languageEndYearEra}
-                </div>
-              </li>
-            );
-          })}
+              return (
+                <li key={language.id}>
+                  <div>
+                    <Link
+                      href={`/languages/${encodeURIComponent(language.id)}`}
+                    >
+                      {language.name}:{" "}
+                    </Link>
+                    Active from {languageBeginYear} {languageBeginYearEra} to{" "}
+                    {languageEndYear} {languageEndYearEra}
+                  </div>
+                </li>
+              );
+            })}
         </ul>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             const beginYearBP =
-              beginYearEra === "AD" ? 1950 - beginYear : -1950 - beginYear;
+              beginYearEra === "AD" ? 1950 - beginYear : 1950 + beginYear;
             const endYearBP =
-              endYearEra === "AD" ? 1950 - endYear : -1950 - endYear;
+              endYearEra === "AD" ? 1950 - endYear : 1950 + endYear;
             createLanguage.mutate({ name, beginYearBP, endYearBP });
           }}
           className="flex flex-col gap-2"

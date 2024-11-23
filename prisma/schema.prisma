@@ -48,6 +48,8 @@ model LanguageDepth {
     language Language @relation(fields: [languageId], references: [id])
     languageId Int
 
+    author    String  @default("Anonymous")
+
     words WordLayer[]
 
     @@index([depth])
@@ -117,6 +119,7 @@ model Word {
 model WordLayer {
     id        Int      @id @default(autoincrement())
     text      String
+    order     Int      @default(0)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -125,6 +128,8 @@ model WordLayer {
 
     languageDepth LanguageDepth @relation(fields: [languageDepthId], references: [id])
     languageDepthId Int
+
+    cachedAnalysis String @default("")
 
     @@index([wordId])
     @@index([text])

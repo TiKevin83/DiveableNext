@@ -41,6 +41,42 @@ export const lineRouter = createTRPCRouter({
       });
     }),
 
+  deleteWord: protectedProcedure
+    .input(z.number())
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.word.delete({
+        where: { id: input },
+      });
+    }),
+
+  deleteWordLayer: protectedProcedure
+    .input(z.number())
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.wordLayer.delete({
+        where: { id: input },
+      });
+    }),
+
+  updateWordLayer: protectedProcedure
+    .input(
+      z.object({
+        depthZeroId: z.number(),
+        id: z.number(),
+        text: z.string(),
+        order: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.wordLayer.update({
+        where: { id: input.depthZeroId },
+        data: { cachedAnalysis: "" },
+      });
+      return ctx.db.wordLayer.update({
+        where: { id: input.id },
+        data: { text: input.text, order: input.order },
+      });
+    }),
+
   create: protectedProcedure
     .input(
       z.object({
@@ -76,7 +112,13 @@ export const lineRouter = createTRPCRouter({
             },
           },
         },
-        stanza: { include: { chapter: { include: { book: true } } } },
+        stanza: {
+          include: {
+            chapter: {
+              include: { book: { include: { languageDepths: true } } },
+            },
+          },
+        },
       },
     });
   }),

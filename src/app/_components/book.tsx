@@ -24,8 +24,21 @@ export function SingleBook(props: BookProps) {
       await utils.book.invalidate();
     },
   });
+  const createWordLayer = api.line.createWordLayer.useMutation({});
+  const deleteWordLayer = api.line.deleteWordLayer.useMutation({});
   const createLanguageDepth = api.book.createLanguageDepth.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      book?.chapters
+        .flatMap((chapter) => chapter.stanzas)
+        .flatMap((stanza) => stanza.lines)
+        .flatMap((line) => line.words)
+        .forEach((word) => {
+          createWordLayer.mutate({
+            text: "",
+            languageDepthId: data.id,
+            wordId: word.id,
+          });
+        });
       await utils.book.invalidate();
     },
   });
@@ -50,15 +63,15 @@ export function SingleBook(props: BookProps) {
           })
           .map((languageDepth) => {
             const languageBeginYear = Math.abs(
-              1950 + languageDepth.language.beginYearBP,
+              1950 - languageDepth.language.beginYearBP,
             );
             const languageBeginYearEra =
-              1950 + languageDepth.language.beginYearBP < 0 ? "BC" : "AD";
+              1950 - languageDepth.language.beginYearBP < 0 ? "BC" : "AD";
             const languageEndYear = Math.abs(
-              1950 + languageDepth.language.endYearBP,
+              1950 - languageDepth.language.endYearBP,
             );
             const languageEndYearEra =
-              1950 + languageDepth.language.endYearBP < 0 ? "BC" : "AD";
+              1950 - languageDepth.language.endYearBP < 0 ? "BC" : "AD";
             return (
               <div
                 key={languageDepth.id}
@@ -75,9 +88,22 @@ export function SingleBook(props: BookProps) {
                   active: {languageBeginYear} {languageBeginYearEra} to{" "}
                   {languageEndYear} {languageEndYearEra}{" "}
                 </p>
+                <p>layer depth: {languageDepth.depth}</p>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
+                    book?.chapters
+                      .flatMap((chapter) => chapter.stanzas)
+                      .flatMap((stanza) => stanza.lines)
+                      .flatMap((line) => line.words)
+                      .flatMap((word) => word.layers)
+                      .filter(
+                        (wordLayer) =>
+                          wordLayer.languageDepthId === languageDepth.id,
+                      )
+                      .forEach((wordLayer) => {
+                        deleteWordLayer.mutate(wordLayer.id);
+                      });
                     deleteLanguageDepth.mutate(languageDepth.id);
                   }}
                   className="py-3"
@@ -107,7 +133,6 @@ export function SingleBook(props: BookProps) {
             value={newLanguageId}
             onChange={(e) => {
               e.preventDefault();
-              console.log(e.target.value);
               setNewLanguageId(parseInt(e.target.value));
             }}
           >
