@@ -15,12 +15,39 @@ export const lineRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.word.create({
+      const newWordData = await ctx.db.word.create({
         data: {
           number: input.number,
           line: { connect: { id: input.lineId } },
         },
       });
+      const newWord = await ctx.db.word.findUnique({
+        where: { id: newWordData.id },
+        include: {
+          line: {
+            include: {
+              stanza: {
+                include: {
+                  chapter: {
+                    include: { book: { include: { languageDepths: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      for (const languageDepth of newWord?.line.stanza.chapter.book
+        .languageDepths ?? []) {
+        await ctx.db.wordLayer.create({
+          data: {
+            text: "",
+            word: { connect: { id: newWordData.id } },
+            languageDepth: { connect: { id: languageDepth.id } },
+          },
+        });
+      }
+      return newWordData;
     }),
 
   createWordLayer: protectedProcedure
@@ -32,7 +59,7 @@ export const lineRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.wordLayer.create({
+      return await ctx.db.wordLayer.create({
         data: {
           text: input.text,
           word: { connect: { id: input.wordId } },
@@ -44,7 +71,13 @@ export const lineRouter = createTRPCRouter({
   deleteWord: protectedProcedure
     .input(z.number())
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.word.delete({
+      const wordLayers = await ctx.db.wordLayer.findMany({
+        where: { wordId: input },
+      });
+      for (const wordLayer of wordLayers) {
+        await ctx.db.wordLayer.delete({ where: { id: wordLayer.id } });
+      }
+      return await ctx.db.word.delete({
         where: { id: input },
       });
     }),

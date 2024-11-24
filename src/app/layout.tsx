@@ -18,6 +18,10 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
 
+  if (session?.user.email !== "travismcgeehan@gmail.com") {
+    return <div>The Diveable live site is currently in development.</div>;
+  }
+
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>

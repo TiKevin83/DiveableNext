@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import analyzeWord from "../analyzeWord";
+import openaiAnalysisEngine from "../openaiAnalysisEngine";
 
 export const openaiRouter = createTRPCRouter({
   get: protectedProcedure
@@ -19,7 +19,11 @@ export const openaiRouter = createTRPCRouter({
       ) {
         return existingAnalysis.cachedAnalysis;
       }
-      const analysis = await analyzeWord(input.prompt);
+
+      if (ctx.session.user.email !== "travismcgeehan@gmail.com") {
+        return "You are not authorized to use this feature.";
+      }
+      const analysis = await openaiAnalysisEngine(input.prompt);
       console.log(analysis);
       await ctx.db.wordLayer.update({
         where: { id: input.wordLayerId },

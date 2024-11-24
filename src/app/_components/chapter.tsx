@@ -39,7 +39,7 @@ export function SingleChapter(props: { chapterId: number }) {
               className="flex min-w-48 max-w-48 flex-col items-center justify-center rounded-lg border border-solid border-white text-center"
             >
               <Link href={`/stanzas/${stanza.id}`} className="inline-block p-8">
-                {stanza.number}
+                Stanza {stanza.number}
               </Link>
             </div>
           ))}

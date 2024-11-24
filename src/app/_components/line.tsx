@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa6";
 import { FaSave } from "react-icons/fa";
 import { api } from "~/trpc/react";
+import Link from "next/link";
 
 export function SingleLine(props: { lineId: number }) {
   const utils = api.useUtils();
@@ -23,21 +24,10 @@ export function SingleLine(props: { lineId: number }) {
     }
   }, [editingWordsLoaded, line, lineQuery.isLoading]);
 
-  const createWordLayer = api.line.createWordLayer.useMutation({
+  const createWord = api.line.createWord.useMutation({
     onSuccess: async () => {
       await utils.line.invalidate();
-    },
-  });
-
-  const createWord = api.line.createWord.useMutation({
-    onSuccess: async (data) => {
-      line?.stanza.chapter.book.languageDepths.forEach((languageDepth) => {
-        createWordLayer.mutate({
-          text: "",
-          wordId: data.id,
-          languageDepthId: languageDepth.id,
-        });
-      });
+      setEditingWordsLoaded(false);
     },
   });
 
@@ -53,20 +43,17 @@ export function SingleLine(props: { lineId: number }) {
     },
   });
 
-  const deleteWordLayer = api.line.deleteWordLayer.useMutation({
-    onSuccess: async () => {
-      await utils.line.invalidate();
-    },
-  });
-
   if (!line) return <div>Loading...</div>;
 
   return (
     <div>
       <p>{line.stanza.chapter.book.name}</p>
       <h1 className="my-2 text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-        Chapter: {line.stanza.chapter.name} - Stanza: {line.stanza.number} -
-        Line: {line.number}
+        Chapter: {line.stanza.chapter.name} -{" "}
+        <Link href={`/stanzas/${line.stanzaId}`}>
+          Stanza: {line.stanza.number}
+        </Link>{" "}
+        - Line: {line.number}
       </h1>
       <div className="flex flex-row flex-wrap gap-4">
         <div className="flex flex-col items-center justify-center text-center">
@@ -177,10 +164,6 @@ export function SingleLine(props: { lineId: number }) {
             e.preventDefault();
             const wordToDelete = line.words[line.words.length - 1];
             if (!wordToDelete) return;
-            const wordLayersToDelete = wordToDelete.layers;
-            wordLayersToDelete.forEach((layer) => {
-              deleteWordLayer.mutate(layer.id);
-            });
             deleteWord.mutate(wordToDelete.id);
           }}
         >

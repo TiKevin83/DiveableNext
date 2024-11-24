@@ -7,7 +7,7 @@ const client = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
 });
 
-async function analyzeWord(wordContext: string) {
+async function openaiAnalysisEngine(content: string) {
   const completions = await client.chat.completions.create({
     messages: [
       {
@@ -17,7 +17,7 @@ async function analyzeWord(wordContext: string) {
       },
       {
         role: "user",
-        content: `write a few sentences analyzing the word ${wordContext}.`,
+        content: `write a few sentences analyzing ${content}.`,
       },
     ],
     model: "gpt-4o",
@@ -31,4 +31,4 @@ async function analyzeWord(wordContext: string) {
   return completion;
 }
 
-export default analyzeWord;
+export default openaiAnalysisEngine;

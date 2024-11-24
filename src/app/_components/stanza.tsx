@@ -132,46 +132,59 @@ export function SingleStanza(props: { stanzaId: number }) {
                   }}
                 >
                   <p>{languageDepth.name}</p>
-                  <p>
-                    {stanza.lines
-                      .flatMap((line) => line.words)
-                      .flatMap((word) => word.layers)
-                      .filter(
-                        (word) => word.languageDepthId === languageDepth.id,
-                      )
-                      .sort((a, b) => a.order - b.order)
-                      .map((wordLayer) => (
-                        <span
-                          key={wordLayer.id}
-                          onClick={() => {
-                            const analysisWordId = wordLayer.wordId;
-                            const word = stanza.lines
-                              .flatMap((line) => line.words)
-                              ?.find((word) => word.id === analysisWordId);
-                            const topWordLayer = word?.layers.find(
-                              (layer) => layer.languageDepth.depth === 0,
-                            );
-                            const contextSentence = stanza.lines
-                              .find((line) => line.id === word?.lineId)
-                              ?.words.flatMap((word) => word.layers)
-                              .sort((a, b) => a.order - b.order)
-                              .map((layer) => layer.text)
-                              .join(" ");
-                            const layerContext = word?.layers
-                              .map(
-                                (layer) =>
-                                  `${layer.languageDepth.name} is ${layer.text}`,
+                  {
+                    <p>
+                      {stanza.lines.map((line) => {
+                        return (
+                          <p key={line.id}>
+                            {line.words
+                              .flatMap((word) => word.layers)
+                              .filter(
+                                (word) =>
+                                  word.languageDepthId === languageDepth.id,
                               )
-                              .join(" ");
-                            const prompt = `${topWordLayer?.text} in the context of the sentence ${contextSentence}, with layers analyzed as ${layerContext}.`;
-                            setPrompt(prompt);
-                            setActiveAnalysisWordLayerId(topWordLayer?.id);
-                          }}
-                        >
-                          {wordLayer.text}{" "}
-                        </span>
-                      ))}
-                  </p>
+                              .sort((a, b) => a.order - b.order)
+                              .map((wordLayer) => (
+                                <span
+                                  key={wordLayer.id}
+                                  onClick={() => {
+                                    const analysisWordId = wordLayer.wordId;
+                                    const word = stanza.lines
+                                      .flatMap((line) => line.words)
+                                      ?.find(
+                                        (word) => word.id === analysisWordId,
+                                      );
+                                    const topWordLayer = word?.layers.find(
+                                      (layer) =>
+                                        layer.languageDepth.depth === 0,
+                                    );
+                                    const contextSentence = stanza.lines
+                                      .find((line) => line.id === word?.lineId)
+                                      ?.words.flatMap((word) => word.layers)
+                                      .sort((a, b) => a.order - b.order)
+                                      .map((layer) => layer.text)
+                                      .join(" ");
+                                    const layerContext = word?.layers
+                                      .map(
+                                        (layer) =>
+                                          `${layer.languageDepth.name} is ${layer.text}`,
+                                      )
+                                      .join(" ");
+                                    const prompt = `the word ${topWordLayer?.text} in the context of the sentence ${contextSentence}, with layers analyzed as ${layerContext}.`;
+                                    setPrompt(prompt);
+                                    setActiveAnalysisWordLayerId(
+                                      topWordLayer?.id,
+                                    );
+                                  }}
+                                >
+                                  {wordLayer.text}{" "}
+                                </span>
+                              ))}
+                          </p>
+                        );
+                      })}
+                    </p>
+                  }
                 </div>
               );
             })}
