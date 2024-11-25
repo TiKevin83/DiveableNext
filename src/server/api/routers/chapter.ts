@@ -32,7 +32,14 @@ export const chapterRouter = createTRPCRouter({
   get: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
     return ctx.db.chapter.findUnique({
       where: { id: input },
-      include: { stanzas: true, book: true },
+      include: {
+        stanzas: {
+          include: {
+            lines: { include: { words: { include: { layers: true } } } },
+          },
+        },
+        book: { include: { languageDepths: true } },
+      },
     });
   }),
 });

@@ -21,6 +21,9 @@ export function SingleStanza(props: { stanzaId: number }) {
   const [activeAnalysisWordLayerId, setActiveAnalysisWordLayerId] = useState<
     number | null
   >();
+  const [activeAnalysisWordId, setActiveAnalysisWordId] = useState<
+    number | null
+  >(null);
   const activeAnalysis = api.openai.get.useQuery({
     wordLayerId: activeAnalysisWordLayerId ?? 0,
     prompt,
@@ -47,7 +50,7 @@ export function SingleStanza(props: { stanzaId: number }) {
     },
   });
 
-  const displayText = useTypewriter(activeAnalysis ?? "");
+  const displayText = useTypewriter(activeAnalysis ?? "", 20);
 
   if (!stanza) return <div>Loading...</div>;
 
@@ -55,9 +58,13 @@ export function SingleStanza(props: { stanzaId: number }) {
     <div>
       <p>{stanza.chapter.book.name}</p>
       <h1 className="my-2 text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-        Chapter: {stanza?.chapter.name} - Stanza: {stanza.number}
+        Chapter:{" "}
+        <Link href={`/chapters/${stanza.chapterId}`}>
+          {stanza?.chapter.name}
+        </Link>{" "}
+        - Stanza: {stanza.number}
       </h1>
-      <div className="flex flex-row gap-4">
+      <div className="flex flex-row flex-wrap gap-4 text-xs">
         {stanza.lines
           .sort((a, b) => {
             return a.number - b.number;
@@ -72,36 +79,65 @@ export function SingleStanza(props: { stanzaId: number }) {
               </Link>
             </div>
           ))}
-        <button
-          type={"submit"}
-          className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
-          onClick={(e) => {
-            e.preventDefault();
-            const lineToDelete = stanza.lines[stanza.lines?.length - 1];
-            if (!lineToDelete) return;
-            deleteLine.mutate(lineToDelete.id);
-          }}
-        >
-          <FaMinus />
-        </button>
-        <button
-          type={"submit"}
-          className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
-          onClick={(e) => {
-            e.preventDefault();
-            createLine.mutate({
-              number: stanza.lines.length + 1,
-              stanzaId: stanza.id,
-            });
-          }}
-        >
-          <FaPlus />
-        </button>
+        <div className="flex flex-col">
+          <button
+            type={"submit"}
+            className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+            onClick={(e) => {
+              e.preventDefault();
+              const lineToDelete = stanza.lines[stanza.lines?.length - 1];
+              if (!lineToDelete) return;
+              deleteLine.mutate(lineToDelete.id);
+            }}
+          >
+            <FaMinus />
+          </button>
+          <button
+            type={"submit"}
+            className="mt-2 rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+            onClick={(e) => {
+              e.preventDefault();
+              createLine.mutate({
+                number: stanza.lines.length + 1,
+                stanzaId: stanza.id,
+              });
+            }}
+          >
+            <FaPlus />
+          </button>
+        </div>
       </div>
-      <div className="flex flex-row">
-        <div className="m-2 flex flex-col items-center justify-center rounded-lg border border-solid border-white text-center">
-          <p>Click a word for live ChatGPT AI analysis</p>
+      <div className="flex flex-row flex-wrap text-xs sm:flex-nowrap">
+        <div className="m-2 flex w-full flex-col items-center justify-center rounded-lg border border-solid border-white text-center sm:w-2/3">
+          <p>Tap a word for live ChatGPT AI analysis</p>
           <p>{displayText}</p>
+        </div>
+        <div className="m-2 flex w-full flex-col items-center justify-center rounded-lg border border-solid border-white text-center sm:w-1/3">
+          <p>Focused Word</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>Analysis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stanza.lines
+                .flatMap((line) => line.words)
+                .find((word) => word.id === activeAnalysisWordId)
+                ?.layers.sort((a, b) => {
+                  return a.languageDepth.depth - b.languageDepth.depth;
+                })
+                .map((layer) => {
+                  return (
+                    <tr key={layer.id}>
+                      <th>{layer.languageDepth.name}:</th>
+                      <th>{layer.text}</th>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
         </div>
       </div>
       <div className="flex flex-row">
@@ -133,7 +169,7 @@ export function SingleStanza(props: { stanzaId: number }) {
                 >
                   <p>{languageDepth.name}</p>
                   {
-                    <p>
+                    <div>
                       {stanza.lines.map((line) => {
                         return (
                           <p key={line.id}>
@@ -172,6 +208,7 @@ export function SingleStanza(props: { stanzaId: number }) {
                                       .join(" ");
                                     const prompt = `the word ${topWordLayer?.text} in the context of the sentence ${contextSentence}, with layers analyzed as ${layerContext}.`;
                                     setPrompt(prompt);
+                                    setActiveAnalysisWordId(analysisWordId);
                                     setActiveAnalysisWordLayerId(
                                       topWordLayer?.id,
                                     );
@@ -183,7 +220,7 @@ export function SingleStanza(props: { stanzaId: number }) {
                           </p>
                         );
                       })}
-                    </p>
+                    </div>
                   }
                 </div>
               );

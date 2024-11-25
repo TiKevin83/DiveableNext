@@ -55,7 +55,82 @@ export function SingleBook(props: BookProps) {
   if (!book) return <div>Loading...</div>;
 
   return (
-    <div>
+    <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+      <h1 className="text-4xl font-extrabold tracking-tight sm:text-[4rem]">
+        {book?.name}
+      </h1>
+      <h2 className="text-1.5xl font-extrabold tracking-tight sm:text-[1.5rem]">
+        Chapter Editor
+      </h2>
+      <div className="flex flex-row gap-2">
+        {book.chapters
+          .sort((a, b) => {
+            return a.number - b.number;
+          })
+          .map((chapter) => (
+            <div
+              key={chapter.id}
+              className="flex min-w-48 max-w-48 flex-col items-center justify-center rounded-lg border border-solid border-white p-8 text-center"
+            >
+              <Link href={`/chapters/${chapter.id}`}>
+                Chapter {chapter.number} - {chapter.name}
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  deleteChapter.mutate(chapter.id);
+                }}
+                className="py-3"
+              >
+                <FaTrashCan />
+              </button>
+            </div>
+          ))}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            createChapter.mutate({
+              name: newChapterName,
+              number: parseInt(newChapterNumber),
+              bookId: props.id,
+            });
+          }}
+          className="flex flex-col gap-2"
+        >
+          <label htmlFor="chapterName">
+            Add a new chapter by name and number
+          </label>
+          <input
+            id={"chapterName"}
+            type="text"
+            value={newChapterName}
+            placeholder="chapter name"
+            onChange={(e) => {
+              e.preventDefault();
+              setNewChapterName(e.target.value);
+            }}
+            className="w-full rounded-full px-4 py-2 text-black"
+          ></input>
+          <input
+            type="number"
+            value={newChapterNumber}
+            placeholder="1"
+            onChange={(e) => {
+              setNewChapterNumber(e.target.value);
+            }}
+            className="w-full rounded-full px-4 py-2 text-black"
+          ></input>
+          <button
+            type={"submit"}
+            className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+          >
+            <FaPlus />
+          </button>
+        </form>
+      </div>
+      <h2 className="text-1.5xl font-extrabold tracking-tight sm:text-[1.5rem]">
+        Analysis Layers
+      </h2>
       <div className="flex flex-row flex-wrap gap-2 pb-2">
         {book.languageDepths
           .sort((a, b) => {
@@ -158,75 +233,6 @@ export function SingleBook(props: BookProps) {
             placeholder="1"
             onChange={(e) => {
               setNewLanguageDepth(parseInt(e.target.value));
-            }}
-            className="w-full rounded-full px-4 py-2 text-black"
-          ></input>
-          <button
-            type={"submit"}
-            className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
-          >
-            <FaPlus />
-          </button>
-        </form>
-      </div>
-      <div className="flex flex-row gap-2">
-        {book.chapters
-          .sort((a, b) => {
-            return a.number - b.number;
-          })
-          .map((chapter) => (
-            <div
-              key={chapter.id}
-              className="flex min-w-48 max-w-48 flex-col items-center justify-center rounded-lg border border-solid border-white text-center"
-            >
-              <Link
-                href={`/chapters/${chapter.id}`}
-                className="inline-block p-8"
-              >
-                {chapter.name}
-              </Link>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  deleteChapter.mutate(chapter.id);
-                }}
-                className="py-3"
-              >
-                <FaTrashCan />
-              </button>
-            </div>
-          ))}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            createChapter.mutate({
-              name: newChapterName,
-              number: parseInt(newChapterNumber),
-              bookId: props.id,
-            });
-          }}
-          className="flex flex-col gap-2"
-        >
-          <label htmlFor="chapterName">
-            Add a new chapter by name and number
-          </label>
-          <input
-            id={"chapterName"}
-            type="text"
-            value={newChapterName}
-            placeholder="chapter name"
-            onChange={(e) => {
-              e.preventDefault();
-              setNewChapterName(e.target.value);
-            }}
-            className="w-full rounded-full px-4 py-2 text-black"
-          ></input>
-          <input
-            type="number"
-            value={newChapterNumber}
-            placeholder="1"
-            onChange={(e) => {
-              setNewChapterNumber(e.target.value);
             }}
             className="w-full rounded-full px-4 py-2 text-black"
           ></input>

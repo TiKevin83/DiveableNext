@@ -6,6 +6,7 @@ const useTypewriter = (text: string, speed = 25) => {
 
   useEffect(() => {
     setDisplayText("");
+    typingIndex.current = 0;
   }, [text]);
 
   useEffect(() => {
