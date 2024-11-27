@@ -19,7 +19,18 @@ export function SingleLine(props: { lineId: number }) {
 
   useEffect(() => {
     if (!lineQuery.isLoading && !editingWordsLoaded) {
-      setEditingWords(line?.words ?? []);
+      const initializedWords = line?.words.map((word) => {
+        return {
+          ...word,
+          layers: word.layers.map((layer) => {
+            return {
+              ...layer,
+              order: layer.order === 0 ? word.number : layer.order,
+            };
+          }),
+        };
+      });
+      setEditingWords(initializedWords ?? []);
       setEditingWordsLoaded(true);
     }
   }, [editingWordsLoaded, line, lineQuery.isLoading]);

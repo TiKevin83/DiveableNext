@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa6";
 import { api } from "~/trpc/react";
 
@@ -21,14 +21,21 @@ export function SingleChapter(props: { chapterId: number }) {
     },
   });
 
-  const [languageDepth, setLanguageDepth] = useState(0);
+  const [languageDepth, setLanguageDepth] = useState(-1);
+
+  useEffect(() => {
+    const firstLanguageDepthId = chapter?.book.languageDepths[0]?.id;
+    if (languageDepth === -1 && firstLanguageDepthId) {
+      setLanguageDepth(firstLanguageDepthId);
+    }
+  }, [languageDepth, chapter?.book]);
 
   if (!chapter) return <div>Loading...</div>;
 
   return (
     <div>
       <p>{chapter?.book.name}</p>
-      <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
+      <h1 className="my-4 text-3xl font-extrabold tracking-tight sm:text-[3rem]">
         {chapter?.name}
       </h1>
       <div className="flex flex-row flex-wrap gap-4">
