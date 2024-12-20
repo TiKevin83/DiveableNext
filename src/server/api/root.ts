@@ -4,6 +4,7 @@ import { chapterRouter } from "./routers/chapter";
 import { stanzaRouter } from "./routers/stanza";
 import { lineRouter } from "./routers/line";
 import { languageRouter } from "./routers/language";
+import { openaiRouter } from "./routers/openai";
 
 /**
  * This is the primary router for your server.
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   stanza: stanzaRouter,
   line: lineRouter,
   language: languageRouter,
+  openai: openaiRouter,
 });
 
 // export type definition of API

@@ -12,7 +12,7 @@ datasource db {
     // Further reading:
     // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
     // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-    url      = env("DATABASE_URL")
+    url      = env("DATABASE_PUBLIC_URL")
 
     // If you have enabled foreign key constraints for your database, remove this line.
     relationMode = "prisma"
@@ -23,6 +23,7 @@ model Book {
     name      String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+    authorizedEditors String[]
 
     createdBy   User   @relation(fields: [createdById], references: [id])
     createdById String
@@ -47,6 +48,8 @@ model LanguageDepth {
 
     language Language @relation(fields: [languageId], references: [id])
     languageId Int
+
+    author    String  @default("Anonymous")
 
     words WordLayer[]
 
@@ -117,6 +120,7 @@ model Word {
 model WordLayer {
     id        Int      @id @default(autoincrement())
     text      String
+    order     Int      @default(0)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -125,6 +129,8 @@ model WordLayer {
 
     languageDepth LanguageDepth @relation(fields: [languageDepthId], references: [id])
     languageDepthId Int
+
+    cachedAnalysis String @default("")
 
     @@index([wordId])
     @@index([text])

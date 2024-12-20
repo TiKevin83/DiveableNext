@@ -16,6 +16,7 @@ export const languageRouter = createTRPCRouter({
         data: { ...input },
       });
     }),
+
   update: protectedProcedure
     .input(
       z.object({
@@ -31,6 +32,7 @@ export const languageRouter = createTRPCRouter({
         where: { id: input.id },
       });
     }),
+
   delete: protectedProcedure
     .input(z.number())
     .mutation(async ({ ctx, input }) => {
@@ -38,12 +40,14 @@ export const languageRouter = createTRPCRouter({
         where: { id: input },
       });
     }),
+
   get: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
     return ctx.db.language.findUnique({
       where: { id: input },
       include: { languageDepths: { include: { book: true } } },
     });
   }),
+
   list: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.language.findMany();
   }),
