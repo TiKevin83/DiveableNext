@@ -169,9 +169,7 @@ export function SingleBook(props: BookProps) {
                   active: {languageBeginYear} {languageBeginYearEra} to{" "}
                   {languageEndYear} {languageEndYearEra}{" "}
                 </p>
-                <p htmlFor={`languageDepth-${languageDepth.id}`}>
-                  Layer Depth: {languageDepth.depth}
-                </p>
+                <p>Layer Depth: {languageDepth.depth}</p>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
