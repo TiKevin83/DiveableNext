@@ -190,23 +190,41 @@ export function SingleStanza(props: { stanzaId: number }) {
                                       ?.find(
                                         (word) => word.id === analysisWordId,
                                       );
+                                    const topLayerDepth = word?.layers
+                                      .sort(
+                                        (a, b) =>
+                                          a.languageDepth.depth -
+                                          b.languageDepth.depth,
+                                      )[0]?.languageDepth.depth;
                                     const topWordLayer = word?.layers.find(
                                       (layer) =>
-                                        layer.languageDepth.depth === 0,
+                                        layer.languageDepth.depth === topLayerDepth,
                                     );
-                                    const contextSentence = stanza.lines
-                                      .find((line) => line.id === word?.lineId)
-                                      ?.words.flatMap((word) => word.layers)
-                                      .sort((a, b) => a.order - b.order)
-                                      .map((layer) => layer.text)
-                                      .join(" ");
+                                    
+                                    // Get context sentences for each language layer
+                                    const allLayerContexts = word?.layers
+                                      .sort((a, b) => a.languageDepth.depth - b.languageDepth.depth)
+                                      .map(layer => {
+                                        const layerDepth = layer.languageDepth.depth;
+                                        const sentence = stanza.lines
+                                          .find((line) => line.id === word?.lineId)
+                                          ?.words
+                                          .map(w => {
+                                            const wordLayer = w.layers.find(l => 
+                                              l.languageDepth.depth === layerDepth);
+                                            return wordLayer?.text || "";
+                                          })
+                                          .join(" ");
+                                        
+                                        return `${layer.languageDepth.name}: "${sentence}"`;
+                                      })
+                                      .join("; ");
                                     const layerContext = word?.layers
                                       .map(
                                         (layer) =>
                                           `${layer.languageDepth.name} is ${layer.text}`,
-                                      )
-                                      .join(" ");
-                                    const prompt = `the word ${topWordLayer?.text} in the context of the sentence ${contextSentence}, with layers analyzed as ${layerContext}.`;
+                                      );
+                                    const prompt = `the word ${topWordLayer?.text} in the context of the sentence layers ${allLayerContexts}, with the specific word's layers analyzed as ${layerContext}.`;
                                     setPrompt(prompt);
                                     setActiveAnalysisWordId(analysisWordId);
                                     setActiveAnalysisWordLayerId(
@@ -230,15 +248,20 @@ export function SingleStanza(props: { stanzaId: number }) {
           <button
             className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
             onClick={() => {
+              const topLanguageDepth = stanza.chapter.book.languageDepths.sort(
+                (a, b) => a.depth - b.depth,
+              )[0]?.depth ?? 0;
+              const bottomLanguageDepth = stanza.chapter.book.languageDepths.sort(
+                (a, b) => b.depth - a.depth,
+              )[0]?.depth ?? 0;
               const currentDepth =
                 stanza.chapter.book.languageDepths.find(
                   (languageDepth) => languageDepth.id === focusLanguageDepthId,
-                )?.depth ?? 0;
+                )?.depth ?? topLanguageDepth;
               const newDepthId = stanza.chapter.book.languageDepths.find(
                 (languageDepth) =>
                   languageDepth.depth ===
-                  (currentDepth - 1) %
-                    stanza.chapter.book.languageDepths.length,
+                  ((currentDepth - 1 > topLanguageDepth) ? currentDepth - 1 : topLanguageDepth),
               )?.id;
               setFocusLanguageDepthId(newDepthId ?? null);
             }}
@@ -247,15 +270,20 @@ export function SingleStanza(props: { stanzaId: number }) {
           </button>
           <button
             onClick={() => {
+              const topLanguageDepth = stanza.chapter.book.languageDepths.sort(
+                (a, b) => a.depth - b.depth,
+              )[0]?.depth ?? 0;
+              const bottomLanguageDepth = stanza.chapter.book.languageDepths.sort(
+                (a, b) => b.depth - a.depth,
+              )[0]?.depth ?? 0;
               const currentDepth =
                 stanza.chapter.book.languageDepths.find(
                   (languageDepth) => languageDepth.id === focusLanguageDepthId,
-                )?.depth ?? 0;
+                )?.depth ?? topLanguageDepth;
               const newDepthId = stanza.chapter.book.languageDepths.find(
                 (languageDepth) =>
                   languageDepth.depth ===
-                  (currentDepth + 1) %
-                    stanza.chapter.book.languageDepths.length,
+                  ((currentDepth + 1 < bottomLanguageDepth) ? currentDepth + 1 : bottomLanguageDepth),
               )?.id;
               setFocusLanguageDepthId(newDepthId ?? null);
             }}
