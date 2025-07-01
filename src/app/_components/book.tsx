@@ -165,9 +165,7 @@ export function SingleBook(props: BookProps) {
                 >
                   language: {languageDepth.language.name}
                 </Link>
-                <p>
-                  layer name: {languageDepth.name}
-                </p>
+                <p>layer name: {languageDepth.name}</p>
                 <p>
                   active: {languageBeginYear} {languageBeginYearEra} to{" "}
                   {languageEndYear} {languageEndYearEra}{" "}

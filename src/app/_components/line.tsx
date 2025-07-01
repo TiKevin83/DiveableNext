@@ -209,11 +209,16 @@ export function SingleLine(props: { lineId: number }) {
                 editingWordLayer.text !== uneditedWord?.text ||
                 editingWordLayer.order !== uneditedWord?.order
               ) {
-                const topLanguageDepth = line.stanza.chapter.book.languageDepths
-                  .sort((a, b) => a.depth - b.depth)[0];
+                const topLanguageDepth =
+                  line.stanza.chapter.book.languageDepths.sort(
+                    (a, b) => a.depth - b.depth,
+                  )[0];
                 const depthZeroId = line.words
                   .find((word) => word.id === editingWordLayer.wordId)
-                  ?.layers.find((layer) => layer.languageDepth.depth === topLanguageDepth?.depth)?.id;
+                  ?.layers.find(
+                    (layer) =>
+                      layer.languageDepth.depth === topLanguageDepth?.depth,
+                  )?.id;
                 if (!depthZeroId) return;
                 updateWordLayer.mutate({
                   depthZeroId,
