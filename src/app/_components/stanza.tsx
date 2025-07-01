@@ -221,8 +221,13 @@ export function SingleStanza(props: { stanzaId: number }) {
                                                 searchLayer.languageDepth
                                                   .depth === layerDepth,
                                             );
-                                            return wordLayer?.text ?? "";
+                                            return wordLayer;
                                           })
+                                          .sort(
+                                            (a, b) =>
+                                              (a?.order ?? 0) - (b?.order ?? 0),
+                                          )
+                                          .map((w) => w?.text ?? "")
                                           .join(" ");
 
                                         return `${layer.languageDepth.name}: "${sentence}"`;
