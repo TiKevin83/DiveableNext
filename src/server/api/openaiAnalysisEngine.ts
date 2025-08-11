@@ -20,7 +20,7 @@ async function openaiAnalysisEngine(prompt: string) {
         content: `write a few sentences analyzing ${prompt}.`,
       },
     ],
-    model: "o3",
+    model: "gpt-5",
   });
 
   const completion = completions.choices[0]?.message.content;
