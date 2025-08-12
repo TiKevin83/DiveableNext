@@ -130,7 +130,7 @@ model WordLayer {
     languageDepth LanguageDepth @relation(fields: [languageDepthId], references: [id])
     languageDepthId Int
 
-    cachedAnalysis String @default("")
+    cachedAnalysis String? @default("")
 
     @@index([wordId])
     @@index([text])
