@@ -3,7 +3,7 @@
 import { type WordLayer, type Word, type LanguageDepth } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa6";
-import { FaSave } from "react-icons/fa";
+import { FaSave, FaSpinner } from "react-icons/fa";
 import { api } from "~/trpc/react";
 import Link from "next/link";
 
@@ -12,6 +12,7 @@ export function SingleLine(props: { lineId: number }) {
   const lineQuery = api.line.get.useQuery(props.lineId);
   const line = lineQuery.data;
   const [editingWordsLoaded, setEditingWordsLoaded] = useState(false);
+  const [editingWordsSaving, setEditingWordsSaving] = useState(false);
 
   const [editingWords, setEditingWords] = useState<
     (Word & { layers: (WordLayer & { languageDepth: LanguageDepth })[] })[]
@@ -79,23 +80,20 @@ export function SingleLine(props: { lineId: number }) {
             );
           })}
         </div>
-        {line.words
+        {editingWords
           .sort((a, b) => a.number - b.number)
-          .map((word) => {
+          .map((word, wordIndex) => {
             return (
               <div
-                key={word.id}
+                key={`${word.id}-${wordIndex}`}
                 className="flex min-w-64 max-w-64 flex-col items-center justify-center text-center"
               >
-                {editingWords
-                  .find((editingWord) => editingWord.id === word.id)
-                  ?.layers.sort(
-                    (a, b) => a.languageDepth.depth - b.languageDepth.depth,
-                  )
-                  .map((wordLayer) => {
+                {word.layers
+                  .sort((a, b) => a.languageDepth.depth - b.languageDepth.depth)
+                  .map((wordLayer, index) => {
                     return (
                       <div
-                        key={wordLayer.id}
+                        key={`${wordLayer.id}-${index}`}
                         className="flex min-w-64 max-w-64 flex-row items-center justify-center rounded-lg border border-solid border-white text-center"
                       >
                         <input
@@ -115,7 +113,8 @@ export function SingleLine(props: { lineId: number }) {
                                   layers: editingWord.layers.map(
                                     (editingWordLayer) => {
                                       if (
-                                        editingWordLayer.id === wordLayer.id
+                                        editingWordLayer.languageDepthId ===
+                                        wordLayer.languageDepthId
                                       ) {
                                         return {
                                           ...editingWordLayer,
@@ -173,8 +172,17 @@ export function SingleLine(props: { lineId: number }) {
           className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
           onClick={(e) => {
             e.preventDefault();
-            const wordToDelete = line.words[line.words.length - 1];
+            const wordToDelete = editingWords[editingWords.length - 1];
+
             if (!wordToDelete) return;
+
+            setEditingWords((prevWords) =>
+              prevWords.filter((word) => word.id !== wordToDelete.id),
+            );
+
+            if (wordToDelete.id === 0) return; // If the word is new and not saved yet, skip deletion
+
+            // Delete the word from the database
             deleteWord.mutate(wordToDelete.id);
           }}
         >
@@ -185,10 +193,32 @@ export function SingleLine(props: { lineId: number }) {
           className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
           onClick={(e) => {
             e.preventDefault();
-            createWord.mutate({
-              number: line.words.length + 1,
-              lineId: line.id,
-            });
+            const newWordNumber = editingWords.length + 1;
+
+            // Add a new word to the editingWords state
+            setEditingWords([
+              ...editingWords,
+              {
+                id: 0, // Temporary ID for the new word
+                number: newWordNumber,
+                lineId: line.id,
+                layers: line.stanza.chapter.book.languageDepths.map(
+                  (languageDepth) => ({
+                    id: 0, // Temporary ID for the layer
+                    wordId: 0, // Temporary ID for the word
+                    languageDepthId: languageDepth.id,
+                    languageDepth,
+                    text: "",
+                    order: newWordNumber,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    cachedAnalysis: null,
+                  }),
+                ),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]);
           }}
         >
           <FaPlus />
@@ -198,40 +228,66 @@ export function SingleLine(props: { lineId: number }) {
         className="m-2 rounded-full bg-white/10 p-3 font-semibold transition hover:bg-white/20"
         onClick={async (e) => {
           e.preventDefault();
-          editingWords
-            .flatMap((editingWord) => editingWord.layers)
-            .forEach((editingWordLayer) => {
-              const uneditedWord = line.words
-                .flatMap((word) => word.layers)
-                .find((wordLayer) => wordLayer.id === editingWordLayer.id);
+          setEditingWordsSaving(true);
 
+          // Save all words
+          for (const editingWord of editingWords) {
+            let currentWords = line.words;
+            if (editingWord.id === 0) {
+              // New word: Call createWord
+              await createWord.mutateAsync({
+                number: editingWord.number,
+                lineId: editingWord.lineId,
+              });
+              const wordsFromDb = await lineQuery.refetch();
+              currentWords = wordsFromDb.data?.words ?? line.words;
+            }
+
+            const uneditedWord = currentWords.find(
+              (word) => word.number === editingWord.number,
+            );
+            // Existing word: Update layers if necessary
+            for (const layer of editingWord.layers) {
+              const uneditedLayer = uneditedWord?.layers.find(
+                (wordLayer) =>
+                  wordLayer.languageDepthId === layer.languageDepthId,
+              );
               if (
-                editingWordLayer.text !== uneditedWord?.text ||
-                editingWordLayer.order !== uneditedWord?.order
+                uneditedLayer &&
+                (layer.text !== uneditedLayer?.text ||
+                  layer.order !== uneditedLayer?.order)
               ) {
                 const topLanguageDepth =
                   line.stanza.chapter.book.languageDepths.sort(
                     (a, b) => a.depth - b.depth,
                   )[0];
-                const depthZeroId = line.words
-                  .find((word) => word.id === editingWordLayer.wordId)
+                const depthZeroId = currentWords
+                  .find((word) => word.id === layer.wordId)
                   ?.layers.find(
                     (layer) =>
                       layer.languageDepth.depth === topLanguageDepth?.depth,
                   )?.id;
-                if (!depthZeroId) return;
-                updateWordLayer.mutate({
+                if (!depthZeroId) break;
+
+                await updateWordLayer.mutateAsync({
+                  id: uneditedLayer.id,
+                  text: layer.text,
+                  order: layer.order,
                   depthZeroId,
-                  id: editingWordLayer.id,
-                  text: editingWordLayer.text,
-                  order: editingWordLayer.order,
                 });
               }
-            });
+            }
+          }
+          setEditingWordsSaving(false);
+          setEditingWordsLoaded(false);
           await utils.line.invalidate();
         }}
       >
-        <FaSave />
+        {editingWordsSaving ? (
+          <FaSpinner className="animate-spin" />
+        ) : (
+          <FaSave />
+        )}
       </button>
     </div>
   );
